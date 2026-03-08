@@ -1,0 +1,84 @@
+@import "tailwindcss";
+
+@theme {
+  --color-emerald-500: #10b981;
+  --color-slate-950: #0a0f1d; /* Softer deep navy/black */
+  --color-slate-900: #111827; /* Header depth */
+  --color-slate-800: #1f2937; /* Card surface */
+  --color-slate-900: #374151; /* Subtle borders */
+
+  --animate-fade-in: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: scale(0.98) translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+  }
+}
+
+@layer base {
+  body {
+    @apply bg-slate-950 text-slate-300 min-h-screen antialiased;
+    font-family: "Inter", system-ui, sans-serif;
+  }
+}
+
+/* UX: Improved Navigation with better hit-boxes and feedback */
+@utility nav-btn {
+  @apply cursor-pointer flex flex-col items-center px-6 py-2 rounded-xl transition-all duration-200 relative;
+
+  &.active {
+    @apply text-emerald-400 bg-emerald-500/10;
+    &::after {
+      content: "";
+      @apply absolute bottom-0 w-1/2 h-1 bg-emerald-500 rounded-t-full;
+    }
+  }
+
+  &:not(.active):hover {
+    @apply bg-slate-800 text-slate-100;
+  }
+}
+
+/* UI: High-Definition Stats Cards */
+@utility stat-card {
+  @apply bg-slate-900/50 backdrop-blur-md p-5 rounded-2xl border border-slate-800 
+         hover:border-slate-700 hover:bg-slate-800/80 transition-all duration-300 
+         flex flex-col justify-between shadow-xl;
+}
+
+/* UX: Grouping secondary metrics with lower visual weight */
+@utility metric-box {
+  @apply bg-slate-900/30 p-4 rounded-xl border border-slate-800/50 flex flex-col gap-1;
+  span:first-child {
+    @apply text-slate-500 text-[10px] font-bold uppercase tracking-widest;
+  }
+  span:last-child {
+    @apply text-white text-xl font-semibold;
+  }
+}
+@utility table-row {
+  @apply border-b border-slate-800/50 last:border-0 hover:bg-slate-800/20 transition-all;
+}
+main {
+  @apply animate-fade-in;
+}
+@keyframes scaleUp {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-scale-up {
+  animation: scaleUp 0.2s ease-out forwards;
+}

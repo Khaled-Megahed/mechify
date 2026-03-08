@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mechify | Next-Gen Shop Management</title>
+    <link href="./src/style.css" rel="stylesheet" />
+  </head>
+  <body class="bg-gray-50 text-gray-800 antialiased overflow-x-hidden">
+    <header
+      class="sticky top-0 z-50 bg-slate-900 border-b border-slate-700 shadow-lg"
+    >
+      <div
+        class="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between"
+      >
+        <a href="/" class="flex items-center gap-3 hover:cursor-pointer">
+          <h1 class="text-2xl font-bold tracking-tighter text-white">
+            Mech<span class="text-emerald-500">ify</span>
+          </h1>
+        </a>
+
+        <a
+          href="/src/pages/login.html"
+          class="text-sm bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2 px-6 rounded-full transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-md hover:cursor-pointer"
+        >
+          Login
+        </a>
+      </div>
+    </header>
+
+    <main>
+      <section
+        class="min-h-[calc(100vh-64px)] flex items-center relative py-12 md:py-20 overflow-hidden"
+      >
+        <div class="absolute inset-0 z-0 opacity-10">
+          <div
+            class="absolute -top-10 -left-10 w-96 h-96 bg-emerald-300 rounded-full blur-3xl"
+          ></div>
+          <div
+            class="absolute bottom-10 right-1/4 w-72 h-72 bg-sky-300 rounded-full blur-3xl"
+          ></div>
+        </div>
+
+        <div
+          class="max-w-7xl mx-auto px-6 w-full relative z-10 flex flex-col items-start text-left"
+        >
+          <span
+            class="inline-flex items-center bg-emerald-50 text-emerald-700 text-xs font-semibold px-3 py-1 rounded-full mb-6 border border-emerald-200"
+          >
+            <span class="relative flex h-2 w-2 mr-2">
+              <span
+                class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"
+              ></span>
+              <span
+                class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"
+              ></span>
+            </span>
+            Next-Gen Shop Management
+          </span>
+
+          <h1
+            class="text-5xl md:text-7xl font-extrabold tracking-tighter mb-6 leading-tight text-gray-950 max-w-2xl"
+          >
+            Repair Faster. <br />
+            <span class="text-emerald-600"> Manage Smarter. </span>
+          </h1>
+
+          <p class="text-lg text-gray-700 max-w-lg mb-10 leading-relaxed">
+            Streamline your workflow and keep your customers happy with the
+            ultimate internal system for modern mechanic shops.
+          </p>
+
+          <a
+            href="./src/pages/login.html"
+            class="bg-slate-900 hover:bg-transparent hover:text-emerald-600 border-2 border-transparent hover:border-emerald-600 text-white font-bold py-4 px-10 rounded-full transition-all duration-300 transform hover:scale-105 active:scale-95 text-lg shadow-lg hover:cursor-pointer"
+          >
+            Get Started
+          </a>
+        </div>
+
+        <div
+          class="absolute right-0 bottom-0 top-0 hidden lg:flex items-center justify-center w-2/5 pointer-events-none"
+        >
+          <div
+            id="robot-container"
+            class="relative group animate-float pointer-events-auto hover:cursor-pointer"
+          >
+            <div
+              id="robot-message"
+              class="absolute -top-16 left-1/2 -translate-x-1/2 w-48 bg-white text-gray-800 px-4 py-2 rounded-xl shadow-xl border border-gray-100 z-20 transition-all scale-100"
+            >
+              <p
+                id="message-text"
+                class="font-bold text-sm text-center italic"
+              ></p>
+              <div
+                class="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-white rotate-45 border-r border-b border-gray-100"
+              ></div>
+            </div>
+
+            <img
+              src="/robot.png"
+              alt="Robot mascot"
+              class="w-full max-w-sm h-auto relative z-10"
+            />
+            <div
+              class="absolute -bottom-10 left-1/2 -translate-x-1/2 w-40 h-6 bg-black/10 rounded-full blur-md"
+            ></div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

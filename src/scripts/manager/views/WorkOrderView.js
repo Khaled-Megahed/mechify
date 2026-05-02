@@ -4,11 +4,11 @@
  */
 import { Model } from "../model.js";
 
-export class WorkOrderView {
+class WorkOrderView {
   /**
    * Renders the main container for the Work Orders Tab
    */
-  static render(filter = "All") {
+  render(filter = "All") {
     const activeDate =
       Model.currentActiveDate || new Date().toISOString().split("T")[0];
 
@@ -55,6 +55,10 @@ export class WorkOrderView {
               class="px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${filter === "In Progress" ? "text-emerald-400 bg-slate-800 shadow-md" : "text-slate-500 hover:text-slate-300"}">
               In Progress
             </button>
+            <button onclick="window.renderFilteredWorkOrders('Cancelled')" 
+              class="px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${filter === "Cancelled" ? "text-emerald-400 bg-slate-800 shadow-md" : "text-slate-500 hover:text-slate-300"}">
+              Cancelled
+            </button>
           </div>
         </div>
       </div>
@@ -75,7 +79,7 @@ export class WorkOrderView {
   /**
    * Generates Summary Rows for the list
    */
-  static renderOrders(orders) {
+  renderOrders(orders) {
     return orders
       .map((order) => {
         const status = order.status || "Pending";
@@ -115,7 +119,7 @@ export class WorkOrderView {
       .join("");
   }
 
-  static getStatusColor(status) {
+  getStatusColor(status) {
     switch (status) {
       case "In Progress":
         return "text-blue-400 border-blue-500/30 bg-blue-500/5";
@@ -123,12 +127,14 @@ export class WorkOrderView {
         return "text-amber-400 border-amber-500/30 bg-amber-500/5";
       case "Completed":
         return "text-emerald-400 border-emerald-500/30 bg-emerald-500/5";
+      case "Cancelled":
+        return "text-red-400 border-red-500/30 bg-red-500/5";
       default:
         return "text-slate-400 border-slate-800";
     }
   }
 
-  static renderEmptyState(date) {
+  renderEmptyState(date) {
     return `
       <div class="py-20 flex flex-col items-center justify-center border-2 border-dashed border-slate-800 rounded-3xl bg-slate-900/20">
         <svg class="w-8 h-8 text-slate-700 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -139,3 +145,5 @@ export class WorkOrderView {
     `;
   }
 }
+
+export const workOrderView = new WorkOrderView();

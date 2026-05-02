@@ -1,29 +1,12 @@
+import { handleLoginSuccess, validateEmail, logout } from "./auth-helper.js";
+import { MockStore } from "./mockStore.js";
+
 document.addEventListener("DOMContentLoaded", () => {
   const loginForm = document.getElementById("loginForm");
   const passwordInput = document.getElementById("password");
   const togglePasswordButton = document.getElementById("togglePassword");
+  const feedback = document.getElementById("login-feedback");
 
-  // Fake Database
-  const mockUsers = [
-    {
-      email: "mechanic@gmail.com",
-      password: "123456",
-      role: "Mechanic",
-      /** * FIX: Use relative paths for the current directory.
-       * Since login.html and mechanic.html are in the same folder,
-       * we just use "./filename.html"
-       */
-      redirect: "./mechanic.html",
-    },
-    {
-      email: "manager@gmail.com",
-      password: "123456",
-      role: "Manager",
-      redirect: "./manager.html",
-    },
-  ];
-
-  // 1. Toggle Password Visibility
   if (togglePasswordButton && passwordInput) {
     togglePasswordButton.addEventListener("click", () => {
       const type =
@@ -33,12 +16,11 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // 2. Form Submission Handling
   if (loginForm) {
-    loginForm.addEventListener("submit", (e) => {
+    loginForm.addEventListener("submit", async (e) => {
       e.preventDefault();
 
-      const email = document.getElementById("email").value;
+      const email = document.getElementById("email").value.trim().toLowerCase();
       const password = passwordInput.value;
 
       if (!validateEmail(email)) {
@@ -46,33 +28,34 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      const user = mockUsers.find(
-        (u) => u.email === email && u.password === password,
+      // Always search against the current state of MockStore.users
+      const mockUser = MockStore.users.find(
+        (u) => u.email.toLowerCase() === email && u.password === password,
       );
 
-      if (user) {
-        // SESSION MANAGEMENT
-        localStorage.setItem("isLoggedIn", "true");
-        localStorage.setItem("userRole", user.role);
-        localStorage.setItem("userEmail", user.email);
-
-        // SUCCESS REDIRECTION
-        window.location.href = user.redirect;
-      } else {
-        alert("Invalid credentials. Try: mechanic@gmail.com / 123456");
+      if (mockUser) {
+        const redirect =
+          mockUser.role === "Manager" ? "./manager.html" : "./mechanic.html";
+        showFeedback("Login successful! Redirecting...");
+        handleLoginSuccess({ ...mockUser, redirect });
+        return;
       }
+
+      showFeedback("Invalid email or password. Please try again.", true);
     });
   }
 
-  function validateEmail(email) {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  function showFeedback(message, isError = false) {
+    if (!feedback) return;
+    feedback.textContent = message;
+    feedback.classList.toggle("bg-red-50", isError);
+    feedback.classList.toggle("border-red-500", isError);
+    feedback.classList.toggle("text-red-800", isError);
+    feedback.classList.toggle("bg-emerald-50", !isError);
+    feedback.classList.toggle("border-emerald-500", !isError);
+    feedback.classList.toggle("text-emerald-800", !isError);
+    feedback.classList.remove("hidden");
   }
 });
 
-/**
- * Global Logout Function
- */
-window.logout = function () {
-  localStorage.clear();
-  window.location.href = "/index.html"; // Go back to landing page
-};
+window.logout = logout;

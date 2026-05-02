@@ -4,11 +4,11 @@
  */
 import { Model } from "../model.js";
 
-export class DashboardView {
+class DashboardView {
   /**
    * Returns the main HTML structure for the Dashboard tab
    */
-  static render() {
+  render() {
     // 1. DATA CALCULATION ENGINE
     const orders = Model.workOrders || [];
     const totalCount = orders.length;
@@ -16,6 +16,9 @@ export class DashboardView {
     const activeCount = orders.filter((o) => o.status === "In Progress").length;
     const completedCount = orders.filter(
       (o) => o.status === "Completed",
+    ).length;
+    const cancelledCount = orders.filter(
+      (o) => o.status === "Cancelled",
     ).length;
 
     const revenue = completedCount * 150;
@@ -45,7 +48,7 @@ export class DashboardView {
         ${this.renderStatCard("Scheduled", pendingCount, "amber")}
         ${this.renderStatCard("In Progress", activeCount, "cyan")}
         ${this.renderStatCard("Completed", completedCount, "emerald")}
-        ${this.renderStatCard("Cancelled", 0, "red")}
+        ${this.renderStatCard("Cancelled", cancelledCount, "red")}
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-fade-in" style="animation-delay: 100ms">
@@ -70,27 +73,10 @@ export class DashboardView {
           <div class="metric-box group"><span>Cancellation Rate</span><span class="group-hover:text-red-400">0.00%</span></div>
         </div>
       </div>
-
-      <style>
-        .stat-card {
-          @apply transition-all duration-300 cursor-default bg-slate-900/40 p-5 rounded-lg border-t-2;
-        }
-        .stat-card:hover {
-          @apply bg-slate-800/80 -translate-y-1 shadow-2xl;
-          border-top-width: 4px;
-        }
-        .metric-box {
-          @apply flex justify-between items-center bg-slate-900/40 border border-slate-800/50 p-3 rounded-xl text-xs font-medium text-slate-400 transition-all;
-        }
-        .metric-box:hover {
-          @apply border-slate-600 bg-slate-800/40;
-        }
-        .glow-emerald { text-shadow: 0 0 8px rgba(16, 185, 129, 0.6); }
-      </style>
     `;
   }
 
-  static renderStatCard(label, val, color) {
+  renderStatCard(label, val, color) {
     const theme = {
       blue: "border-blue-500 text-blue-400",
       amber: "border-amber-500 text-amber-500",
@@ -107,3 +93,5 @@ export class DashboardView {
     `;
   }
 }
+
+export const dashboardView = new DashboardView();

@@ -1,37 +1,63 @@
 /**
  * MAIN CONTROLLER
  * Orchestrates application state, routing, and global event delegation.
+ * Connected to .NET Backend at http://localhost:5107
  */
+import { logout, requireRole } from "../auth-helper.js";
 import { Model } from "./model.js";
-import { DashboardView } from "./views/DashboardView.js";
-import { CustomersView } from "./views/CustomersView.js";
-import { ServicesView } from "./views/ServicesView.js";
-import { ScheduleView } from "./views/ScheduleView.js";
-import { WorkOrderView } from "./views/WorkOrderView.js";
+import { dashboardView } from "./views/DashboardView.js";
+import { customersView } from "./views/CustomersView.js";
+import { servicesView } from "./views/ServicesView.js";
+import { scheduleView } from "./views/ScheduleView.js";
+import { workOrderView } from "./views/WorkOrderView.js";
 
 // --- 1. AUTHENTICATION GUARD ---
 (function checkAuth() {
-  const isLoggedIn = localStorage.getItem("isLoggedIn");
-  const role = localStorage.getItem("userRole");
-
-  if (isLoggedIn !== "true" || !role || role.toLowerCase() !== "manager") {
-    window.location.href = "/src/pages/login.html";
-  }
+  requireRole("Manager");
 })();
 
 // --- 2. CONFIGURATION ---
-const views = {
-  dashboard: DashboardView,
-  customers: CustomersView,
-  services: ServicesView,
-  schedule: ScheduleView,
-  workOrders: WorkOrderView,
-};
 
+/**
+ * [DESIGN PATTERN: FACTORY METHOD]
+ * Interface (Base Creator): Defines the method for creating objects.
+ */
+class ViewCreator {
+  /** The Factory Method */
+  createView(tabId) {
+    throw new Error("createView() must be implemented by subclasses");
+  }
+}
+
+/**
+ * Concrete Creator: Decides which specific View class to instantiate/return.
+ * The client (Controller) refers to the result via a common interface (.render()).
+ */
+class ManagerViewCreator extends ViewCreator {
+  createView(tabId) {
+    const id = tabId.toLowerCase();
+    switch (id) {
+      case "dashboard":
+        return dashboardView;
+      case "customers":
+        return customersView;
+      case "services":
+        return servicesView;
+      case "schedule":
+        return scheduleView;
+      case "workorders":
+        return workOrderView;
+      default:
+        return dashboardView;
+    }
+  }
+}
+
+const viewCreator = new ManagerViewCreator();
 let scheduleRefreshInterval = null;
 
 // --- 3. NAVIGATION & VIEW ENGINE ---
-window.switchTab = function (tabId) {
+window.switchTab = async function (tabId) {
   const container = document.getElementById("tab-content");
   if (!container) return;
 
@@ -53,69 +79,77 @@ window.switchTab = function (tabId) {
     );
   });
 
-  // Loading State Transition
+  // Loading State UI
   container.innerHTML = `
-    <div class="flex flex-col items-center justify-center min-h-[400px] animate-fade-in">
+    <div class="flex flex-col items-center justify-center min-h-100 animate-fade-in">
       <div class="w-10 h-10 border-2 border-slate-800 border-t-emerald-500 rounded-full animate-spin mb-4"></div>
       <p class="text-slate-500 text-[10px] font-black uppercase tracking-[0.2em]">Syncing Neural Link...</p>
     </div>`;
 
+  // Fetch fresh data for specific views before rendering
+  if (normalizedId === "schedule") {
+    await Model.refreshSchedule(Model.currentActiveDate);
+  } else if (normalizedId === "workOrders" || normalizedId === "dashboard") {
+    await Model.init();
+  }
+
+  // Slight delay for the animation feel
   setTimeout(() => {
-    container.innerHTML = views[normalizedId]
-      ? views[normalizedId].render()
-      : DashboardView.render();
+    const view = viewCreator.createView(tabId);
+    container.innerHTML = view.render();
 
     // Contextual Initialization
     if (normalizedId === "schedule") {
-      ScheduleView.renderScheduleGrid();
-      ScheduleView.scrollScheduleToTime();
-      scheduleRefreshInterval = setInterval(
-        () => ScheduleView.renderScheduleGrid(),
-        60000,
-      );
+      scheduleView.renderScheduleGrid();
+      scheduleView.scrollScheduleToTime();
+      // Auto-refresh every minute to stay synced with mechanic updates
+      scheduleRefreshInterval = setInterval(async () => {
+        await Model.refreshSchedule(Model.currentActiveDate);
+        scheduleView.renderScheduleGrid();
+      }, 60000);
     }
   }, 350);
 };
 
 // --- 4. GLOBAL EVENT DELEGATION ---
+// (Bridges remain mostly the same, but ensure they interact with Model async methods)
+window.renderScheduleGrid = () => scheduleView.renderScheduleGrid();
+window.changeScheduleDate = async (date) => {
+  Model.currentActiveDate = date;
+  await Model.refreshSchedule(date); // Fetch data for the new date
+  scheduleView.renderScheduleGrid();
+};
 
-// Schedule Bridge
-window.renderScheduleGrid = () => ScheduleView.renderScheduleGrid();
-window.changeScheduleDate = (date) => ScheduleView.changeScheduleDate(date);
 window.openScheduleModal = (mId, sIdx) =>
-  ScheduleView.openScheduleModal(mId, sIdx);
+  scheduleView.openScheduleModal(mId, sIdx);
 window.editScheduleItem = (mId, sIdx, oId) =>
-  ScheduleView.editScheduleItem(mId, sIdx, oId);
-window.saveScheduleItem = (e) => ScheduleView.saveScheduleItem(e);
+  scheduleView.editScheduleItem(mId, sIdx, oId);
+window.viewOrderDetails = (orderId) => scheduleView.viewOrderDetails(orderId);
+window.saveScheduleItem = (e) => scheduleView.saveScheduleItem(e);
 window.removeScheduleItem = (mId, sIdx) =>
-  ScheduleView.removeScheduleItem(mId, sIdx);
-window.closeScheduleModal = () => ScheduleView.closeScheduleModal();
-window.handleCustomerSelection = (v) => ScheduleView.handleCustomerSelection(v);
-window.updateCalculatedTime = () => ScheduleView.updateCalculatedTime();
+  scheduleView.removeScheduleItem(mId, sIdx);
+window.closeScheduleModal = () => scheduleView.closeScheduleModal();
+window.handleCustomerSelection = (v) => scheduleView.handleCustomerSelection(v);
+window.updateCalculatedTime = () => scheduleView.updateCalculatedTime();
 
-// Work Order Bridge
-window.changeWorkOrderDate = function (newDate) {
+window.changeWorkOrderDate = async function (newDate) {
   Model.currentActiveDate = newDate;
-  // Re-render tab to reflect the schedule of the new date
+  await Model.refreshSchedule(newDate);
   window.switchTab("workOrders");
 };
 
 window.renderFilteredWorkOrders = function (status) {
   const container = document.getElementById("tab-content");
   if (container) {
-    // Re-renders only the inner content of the current view with the filter applied
-    container.innerHTML = WorkOrderView.render(status);
+    container.innerHTML = workOrderView.render(status);
   }
 };
 
-// --- 5. INITIALIZATION & UTILS ---
-window.logout = () => {
-  localStorage.clear();
-  window.location.href = "/src/pages/login.html";
-};
+// --- 5. INITIALIZATION ---
+window.logout = logout;
 
-document.addEventListener("DOMContentLoaded", () => {
-  const email = localStorage.getItem("userEmail") || "manager@garage.com";
+document.addEventListener("DOMContentLoaded", async () => {
+  const email = localStorage.getItem("userEmail") || "manager@gmail.com";
   const emailDisplay = document.getElementById("user-display-email");
   const initialDisplay = document.getElementById("user-initials");
 
@@ -123,5 +157,9 @@ document.addEventListener("DOMContentLoaded", () => {
   if (initialDisplay)
     initialDisplay.textContent = email.charAt(0).toUpperCase();
 
+  // IMPORTANT: Initialize the Model from the API before loading the first tab
+  await Model.init();
+
+  // Load the default view
   window.switchTab("dashboard");
 });

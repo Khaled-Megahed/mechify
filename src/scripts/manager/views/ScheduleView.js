@@ -8,11 +8,11 @@ import { Model } from "../model.js";
 let pendingScheduleData = null;
 let currentEditingOrderId = null;
 
-export class ScheduleView {
+class ScheduleView {
   /**
    * Main Render for the Schedule Container Structure
    */
-  static render() {
+  render() {
     const bayLetters = ["A", "B", "C", "D"];
 
     return `
@@ -30,8 +30,8 @@ export class ScheduleView {
         </div>
 
         <div class="flex-1 min-h-0 bg-slate-900/50 border border-slate-800 rounded-xl overflow-hidden shadow-xl flex flex-col">
-          <div class="grid grid-cols-5 bg-slate-950 border-b border-slate-800 sticky top-0 z-10">
-            <div class="p-2 text-[9px] font-black text-slate-500 uppercase tracking-widest text-center">Time</div>
+          <div class="grid grid-cols-[80px_1fr_1fr_1fr_1fr] bg-slate-950 border-b border-slate-800 sticky top-0 z-30">
+            <div class="p-2 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">Time</div>
             ${Model.mechanicsList
               .map(
                 (m, index) => `
@@ -52,7 +52,7 @@ export class ScheduleView {
   /**
    * Renders the dynamic grid content
    */
-  static renderScheduleGrid() {
+  renderScheduleGrid() {
     const container = document.getElementById("schedule-grid-body");
     if (!container) return;
 
@@ -68,25 +68,30 @@ export class ScheduleView {
     const now = new Date();
     const todayStr = now.toISOString().split("T")[0];
     const isToday = Model.currentActiveDate === todayStr;
-    const slotHeightValue = 42;
+    const slotHeight = 42;
 
-    let html = `<div class="grid grid-cols-5 relative" style="grid-auto-rows: ${slotHeightValue}px;">`;
+    // Define explicit rows for every time label to ensure spanning is pixel-perfect
+    const gridRows = `grid-template-rows: repeat(${Model.timeLabels.length}, ${slotHeight}px);`;
+
+    let html = `<div class="grid grid-cols-[80px_1fr_1fr_1fr_1fr] relative" style="${gridRows}">`;
 
     if (isToday) {
       const startHour = 8;
       const minutesSinceStart =
         (now.getHours() - startHour) * 60 + now.getMinutes();
       if (minutesSinceStart >= 0 && minutesSinceStart <= 600) {
-        const topOffset = (minutesSinceStart / 30) * slotHeightValue;
+        const topOffset = (minutesSinceStart / 30) * slotHeight;
         html += `<div id="time-now-line" class="absolute left-0 right-0 z-20 pointer-events-none flex items-center" style="top: ${topOffset}px">
-                   <div class="w-full h-[2px] bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]"></div>
+                   <div class="w-full h-0.5 bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]"></div>
                  </div>`;
       }
     }
 
     for (let i = 0; i < Model.timeLabels.length; i++) {
-      html += `<div class="border-b border-slate-800/40 flex items-center justify-center bg-slate-950/30 text-[11px] font-mono text-slate-400">${Model.timeLabels[i]}</div>`;
+      // Time column is always grid-column 1
+      html += `<div class="border-b border-slate-800/40 flex items-center justify-center bg-slate-950/30 text-[10px] font-mono text-slate-500" style="grid-column: 1; grid-row: ${i + 1};">${Model.timeLabels[i]}</div>`;
 
+      let colIdx = 2;
       for (let m of Model.mechanicsList) {
         const status = Model.isSlotBooked(Model.currentActiveDate, m.id, i);
 
@@ -100,8 +105,8 @@ export class ScheduleView {
           );
 
           html += `
-            <div class="p-1 border-l border-b border-slate-800/40" style="grid-row: span ${status.duration}">
-              <div class="h-full w-full bg-emerald-500/15 border border-emerald-500/40 rounded-xl p-2 flex flex-col relative group overflow-hidden shadow-lg">
+            <div class="p-1 border-l border-b border-slate-800/30" style="grid-column: ${colIdx}; grid-row: ${i + 1} / span ${status.duration}; z-index: 10;">
+              <div class="h-full w-full bg-emerald-500/15 border border-emerald-500/40 rounded-xl p-2 flex flex-col relative group overflow-hidden shadow-xl">
                 ${actionButtons}
                 <span class="text-[10px] font-black text-emerald-300 truncate w-[80%] uppercase">${status.customer}</span>
                 <span class="text-[8px] text-slate-400 italic truncate mb-2">${status.vehicle || ""}</span>
@@ -121,20 +126,21 @@ export class ScheduleView {
         } else if (!status.booked) {
           const isPast = this.checkIfPast(i, todayStr, isToday, now);
           html += isPast
-            ? `<div class="p-0.5 border-l border-b border-slate-800/40 bg-slate-950/50 flex items-center justify-center opacity-10"><svg class="w-3 h-3 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg></div>`
-            : `<div class="p-0.5 border-l border-b border-slate-800/40"><button onclick="window.openScheduleModal('${m.id}', ${i})" class="h-full w-full rounded-lg hover:bg-emerald-500/10 flex items-center justify-center group cursor-pointer"><span class="text-slate-800 group-hover:text-emerald-500 text-lg font-bold">+</span></button></div>`;
+            ? `<div class="p-0.5 border-l border-b border-slate-800/20 bg-slate-950/20 flex items-center justify-center opacity-10" style="grid-column: ${colIdx}; grid-row: ${i + 1};"><svg class="w-3 h-3 text-slate-700" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg></div>`
+            : `<div class="p-0.5 border-l border-b border-slate-800/20" style="grid-column: ${colIdx}; grid-row: ${i + 1};"><button onclick="window.openScheduleModal('${m.id}', ${i})" class="h-full w-full rounded-lg hover:bg-emerald-500/5 flex items-center justify-center group cursor-pointer"><span class="text-slate-800 group-hover:text-emerald-500/40 text-lg font-bold transition-colors">+</span></button></div>`;
         }
+        colIdx++;
       }
     }
     container.innerHTML = html + `</div>`;
   }
 
-  static changeScheduleDate(newDate) {
+  changeScheduleDate(newDate) {
     Model.currentActiveDate = newDate;
     this.renderScheduleGrid();
   }
 
-  static scrollScheduleToTime() {
+  scrollScheduleToTime() {
     const line = document.getElementById("time-now-line");
     const gridBody = document.getElementById("schedule-grid-body");
     if (line && gridBody) {
@@ -142,7 +148,7 @@ export class ScheduleView {
     }
   }
 
-  static checkIfPast(slotIdx, todayStr, isToday, now) {
+  checkIfPast(slotIdx, todayStr, isToday, now) {
     const [timePart, modifier] = Model.timeLabels[slotIdx].split(" ");
     let [hrs, mins] = timePart.split(":").map(Number);
     if (modifier === "PM" && hrs !== 12) hrs += 12;
@@ -152,7 +158,7 @@ export class ScheduleView {
     return Model.currentActiveDate < todayStr || (isToday && slotDate < now);
   }
 
-  static getActionButtons(mechId, startIdx, orderId, isPast) {
+  getActionButtons(mechId, startIdx, orderId, isPast) {
     if (isPast) {
       return `
         <div class="absolute top-1.5 right-1.5 flex gap-1 opacity-0 group-hover:opacity-100 transition-all z-30">
@@ -172,9 +178,9 @@ export class ScheduleView {
       </div>`;
   }
 
-  static openScheduleModal(mechId, startIdx) {
+  openScheduleModal(mechId, startIdx, booking = null) {
     pendingScheduleData = { date: Model.currentActiveDate, mechId, startIdx };
-    currentEditingOrderId = null;
+    currentEditingOrderId = booking?.orderId || null;
 
     const timeOptions = Model.timeLabels
       .map(
@@ -192,7 +198,7 @@ export class ScheduleView {
       .map(
         (s) => `
       <label class="flex items-center gap-2 p-2 rounded-lg border border-slate-800 bg-slate-950 hover:border-emerald-500/50 cursor-pointer transition-colors group">
-        <input type="checkbox" value="${s.id}" data-time="${s.time}" onchange="window.updateCalculatedTime()" class="srv-checkbox w-3.5 h-3.5 accent-emerald-500 bg-slate-900 border-slate-700 rounded">
+        <input type="checkbox" value="${s.id}" data-time="${s.time}" data-cost="${s.baseCost ?? 0}" data-name="${s.name}" onchange="window.updateCalculatedTime()" class="srv-checkbox w-3.5 h-3.5 accent-emerald-500 bg-slate-900 border-slate-700 rounded">
         <div class="flex-1 flex justify-between items-center">
           <span class="text-xs font-medium text-slate-200">${s.name}</span>
           <span class="text-[9px] font-mono text-slate-500">${s.time} hrs</span>
@@ -244,9 +250,62 @@ export class ScheduleView {
         </div>
       </div>`;
     document.body.insertAdjacentHTML("beforeend", modalHtml);
+
+    if (booking) {
+      document.getElementById("sch-cust-input").value = booking.customer || "";
+      document.getElementById("sch-cust-id").value = booking.customerId || "";
+      document.getElementById("sch-mech-id").value =
+        booking.mechanicId || mechId;
+      document.getElementById("sch-start-time").value = booking.startIdx;
+      this.handleCustomerSelection(booking.customer || "");
+      document.getElementById("sch-vehicle-id").value =
+        booking.vehicleId || booking.vehicle || "";
+      const selectedServiceIds = (booking.selectedServices || []).map((s) =>
+        s.id.toString(),
+      );
+      document.querySelectorAll(".srv-checkbox").forEach((checkbox) => {
+        checkbox.checked = selectedServiceIds.includes(checkbox.value);
+      });
+      const totalHours = (booking.selectedServices || []).reduce(
+        (sum, s) => sum + (parseFloat(s.time) || 0),
+        0,
+      );
+      document.getElementById("calc-time-display").textContent =
+        totalHours.toFixed(1);
+      document.getElementById("sch-submit-btn").disabled = totalHours === 0;
+    }
   }
 
-  static handleCustomerSelection(val) {
+  editScheduleItem(mechId, startIdx, orderId) {
+    const booking = Model.scheduleData[Model.currentActiveDate]?.[mechId]?.find(
+      (item) => item.orderId === orderId && item.startIdx === startIdx,
+    );
+
+    if (!booking) {
+      alert("Selected booking could not be loaded for editing.");
+      return;
+    }
+
+    pendingScheduleData = { date: Model.currentActiveDate, mechId, startIdx };
+    currentEditingOrderId = orderId;
+    this.openScheduleModal(mechId, startIdx, booking);
+  }
+
+  viewOrderDetails(orderId) {
+    const allBookings = Object.values(
+      Model.scheduleData[Model.currentActiveDate] || {},
+    ).flat();
+    const booking = allBookings.find((item) => item.orderId === orderId);
+    if (!booking) {
+      alert("Order details unavailable.");
+      return;
+    }
+    alert(
+      `Order ${booking.orderId}\nCustomer: ${booking.customer}\nVehicle: ${booking.vehicle}\nServices: ${booking.services}\nDuration: ${booking.duration} slots`,
+    );
+  }
+
+  handleCustomerSelection(val) {
     const hiddenIdInput = document.getElementById("sch-cust-id");
     const vehicleSelect = document.getElementById("sch-vehicle-id");
     const customer = Model.customers.find((c) => c.name === val);
@@ -264,7 +323,7 @@ export class ScheduleView {
     }
   }
 
-  static updateVehicleList(customerId, targetPlate = null) {
+  updateVehicleList(customerId, targetPlate = null) {
     const vehicleSelect = document.getElementById("sch-vehicle-id");
     if (!vehicleSelect) return;
     const customer = Model.customers.find((c) => c.id == customerId);
@@ -277,13 +336,15 @@ export class ScheduleView {
     vehicleSelect.innerHTML = customer.vehicles
       .map(
         (v) =>
-          `<option value="${v.plate}" ${v.plate === targetPlate ? "selected" : ""}>${v.make} ${v.model} (${v.plate})</option>`,
+          `<option value="${v.id ?? v.plate}" ${
+            (v.id ?? v.plate) === targetPlate ? "selected" : ""
+          }>${v.make} ${v.model} (${v.plate ?? v.id})</option>`,
       )
       .join("");
     vehicleSelect.disabled = false;
   }
 
-  static updateCalculatedTime() {
+  updateCalculatedTime() {
     const checkboxes = document.querySelectorAll(".srv-checkbox:checked");
     let totalHours = 0;
     checkboxes.forEach(
@@ -295,12 +356,11 @@ export class ScheduleView {
     if (submitBtn) submitBtn.disabled = totalHours === 0;
   }
 
-  static saveScheduleItem(event) {
+  async saveScheduleItem(event) {
     event.preventDefault();
 
-    // 1. Capture Form Data
     const customerId = document.getElementById("sch-cust-id")?.value;
-    const vehiclePlate = document.getElementById("sch-vehicle-id")?.value;
+    const vehicleValue = document.getElementById("sch-vehicle-id")?.value;
     const newStartIdx = parseInt(
       document.getElementById("sch-start-time").value,
     );
@@ -311,84 +371,104 @@ export class ScheduleView {
       return;
     }
 
-    // 2. Calculate Duration & Services
-    const checkboxes = document.querySelectorAll(".srv-checkbox:checked");
-    let totalHours = 0;
-    let serviceNames = [];
-    checkboxes.forEach((cb) => {
-      totalHours += parseFloat(cb.getAttribute("data-time"));
-      serviceNames.push(cb.closest("label").querySelector("span").textContent);
-    });
-    const slotsNeeded = Math.ceil(totalHours / 0.5);
+    const checkboxes = Array.from(
+      document.querySelectorAll(".srv-checkbox:checked"),
+    );
 
-    // 3. Build Booking Object
-    // We use currentEditingOrderId if it exists, otherwise generate new
+    const selectedServices = checkboxes.map((cb) => ({
+      id: cb.value,
+      name: cb.dataset.name || "",
+      time: parseFloat(cb.dataset.time) || 0,
+      baseCost: parseFloat(cb.dataset.cost) || 0,
+    }));
+
+    if (!selectedServices.length) {
+      alert("Please choose at least one service.");
+      return;
+    }
+
+    let totalHours = 0;
+    const serviceNames = [];
+    selectedServices.forEach((service) => {
+      totalHours += service.time;
+      if (service.name) serviceNames.push(service.name);
+    });
+
+    const slotsNeeded = Math.max(1, Math.ceil(totalHours / 0.5));
+
+    const customer = Model.customers.find((c) => c.id == customerId);
+    const vehicle =
+      customer?.vehicles?.find(
+        (v) => (v.id ? v.id.toString() : v.plate) === vehicleValue,
+      ) || {};
+    const tech = Model.mechanicsList.find((m) => m.id === selectedTechId);
+
     const orderId =
       currentEditingOrderId || `WO-${Math.floor(1000 + Math.random() * 9000)}`;
-    const customer = Model.customers.find((c) => c.id == customerId);
-    const vehicle = customer?.vehicles?.find((v) => v.plate === vehiclePlate);
-    const tech = Model.mechanicsList.find((m) => m.id === selectedTechId);
+
+    const vehicleLabel =
+      vehicle?.plate || vehicle?.id
+        ? `${vehicle.make || ""} ${vehicle.model || ""} (${vehicle.plate ?? vehicle.id})`.trim()
+        : "N/A";
 
     const newBooking = {
       startIdx: newStartIdx,
       duration: slotsNeeded,
-      orderId: orderId,
+      orderId,
+      customerId,
+      vehicleId: vehicle.id ?? vehicle.plate ?? vehicleValue,
       customer: customer ? customer.name : "Unknown",
-      vehicle: vehicle
-        ? `${vehicle.make} ${vehicle.model} (${vehicle.plate})`
-        : "N/A",
+      vehicle: vehicleLabel,
       services: serviceNames.join(", "),
       techName: tech ? tech.name : "Unknown",
+      assignedTo: tech ? tech.email : null,
+      notes: "Scheduled from Mechify dashboard",
       status: "Pending",
-      progress: 0,
+      selectedServices,
+      startTime: Model.timeLabels[newStartIdx],
     };
 
-    // 4. Save to Model
-    // Model.addBooking now handles removing the old version automatically!
-    Model.addBooking(pendingScheduleData.date, selectedTechId, newBooking);
+    if (currentEditingOrderId) {
+      Model.removeBooking(
+        pendingScheduleData.date,
+        pendingScheduleData.mechId,
+        currentEditingOrderId,
+      );
+    }
 
-    // 5. Cleanup & UI Refresh
-    this.closeScheduleModal();
+    const success = await Model.addBooking(
+      pendingScheduleData.date,
+      selectedTechId,
+      newBooking,
+    );
 
-    if (document.getElementById("schedule-grid-body")) {
+    if (success) {
+      this.closeScheduleModal();
       this.renderScheduleGrid();
     } else {
-      window.switchTab("workOrders");
+      // If addBooking failed (due to collision), keep the modal open and let the alert from Model handle feedback.
+      // No need to switch tabs or close modal if booking failed.
     }
   }
 
-  static removeScheduleItem(mechId, startIdx) {
+  removeScheduleItem(mechId, startIdx) {
     if (confirm("Are you sure you want to remove this booking?")) {
       const dayData =
         Model.scheduleData[Model.currentActiveDate]?.[mechId] || [];
       const item = dayData.find((i) => i.startIdx === startIdx);
 
       if (item) {
-        // Use the new Model method to clean up both schedule and work orders list
         Model.removeBooking(Model.currentActiveDate, mechId, item.orderId);
         this.renderScheduleGrid();
       }
     }
   }
 
-  static removeScheduleItem(mechId, startIdx) {
-    if (confirm("Remove booking?")) {
-      const item = Model.scheduleData[Model.currentActiveDate][mechId].find(
-        (i) => i.startIdx === startIdx,
-      );
-      Model.workOrders = Model.workOrders.filter(
-        (wo) => wo.orderId !== item.orderId,
-      );
-      Model.scheduleData[Model.currentActiveDate][mechId] = Model.scheduleData[
-        Model.currentActiveDate
-      ][mechId].filter((i) => i.startIdx !== startIdx);
-      this.renderScheduleGrid();
-    }
-  }
-
-  static closeScheduleModal() {
+  closeScheduleModal() {
     document.getElementById("schedule-modal-overlay")?.remove();
     pendingScheduleData = null;
     currentEditingOrderId = null;
   }
 }
+
+export const scheduleView = new ScheduleView();

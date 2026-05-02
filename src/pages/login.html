@@ -4,8 +4,25 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Login | Mechify</title>
+    <link
+      rel="apple-touch-icon"
+      sizes="180x180"
+      href="/public/android-chrome-192x192.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="/public/favicon-32x32.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="16x16"
+      href="/public/favicon-16x16.png"
+    />
+    <link rel="manifest" href="/public/site.webmanifest" />
     <link href="/src/style.css" rel="stylesheet" />
-    <script src="https://cdn.tailwindcss.com"></script>
     <style>
       @keyframes float {
         0%,
@@ -44,6 +61,10 @@
     <main class="grow flex flex-row bg-white">
       <div class="w-full lg:w-1/2 flex items-center justify-center p-12">
         <div class="w-full max-w-md">
+          <div
+            id="login-feedback"
+            class="hidden mb-6 rounded-xl border px-4 py-3 text-sm"
+          ></div>
           <div class="mb-10">
             <h2 class="text-4xl font-extrabold text-gray-950 tracking-tighter">
               Welcome back
@@ -79,12 +100,13 @@
                 >
                   Password
                 </label>
-                <a
-                  href="#"
+                <button
+                  type="button"
+                  onclick="alert('Password recovery is not available yet.')"
                   class="text-sm text-emerald-600 hover:text-emerald-700 font-medium transition-colors"
                 >
                   Forgot?
-                </a>
+                </button>
               </div>
               <div class="relative">
                 <input
